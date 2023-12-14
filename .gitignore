@@ -21,3 +21,7 @@ README.html
 inst/doc
 man/
 NAMESPACE
+
+# Outputs
+outputs/
+figures/
