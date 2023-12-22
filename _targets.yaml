@@ -1,0 +1,3 @@
+main:
+  script: analyses/targets_pipeline.R
+  store: outputs/targets_outputs

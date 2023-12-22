@@ -53,6 +53,11 @@ dbDisconnect(conn)
 
 ################################################################################
 
+View(DATA %>%
+  filter(!is.na(taxon_capture) & is.na(taxon_dissection)))
+
+View(DATA %>%
+  filter(is.na(taxon_capture) & !is.na(taxon_dissection)))
 
 # Read file
 
@@ -221,8 +226,8 @@ m_trapping_r |>
 DHARMa::simulateResiduals(m_trapping_r) |> #alignement testing
   DHARMa::testResiduals() 
 
-performance::icc(m_trapping_r)
-performance ::r2(m_trapping_r)
+performance::icc(m_trapping_r) # Intraclass Correlation Coefficient
+performance ::r2(m_trapping_r) # R2
 
 drop1(m_trapping_r,.~.,test="Chisq") 
 
@@ -254,21 +259,6 @@ bpm_beprep |>
   summary()
   
   
-# lme4::glmer( formula =  succes_rate ~ treatment + (1|numero_ligne),
-# family = poisson(link = "log"),
-# na.action = "na.fail",
-# control = lme4::glmerControl( optimizer="bobyqa", optCtrl=list(maxfun=2e5) ) ) 
-  
-  ggplot(aes(x = succes_rate, color = replicat)) +
-  geom_density()
-
-
-
-  
-  
-  
-  
-
 # Faire sur toutes saisons
 # soit faire taux piegeage (par ligne) en fonction traitement avec replicat en facteur aleat (ex : 6 replicat par modalite puisque 6 ligne)
 # soit faire Capture oui/non par nuit.piege avec nuit releve et ou piege comme facteur aleat (voir replicats ? pertinence)

@@ -9,7 +9,6 @@
 #' @date 2023/12/14
 
 
-
 ## Install Dependencies (listed in DESCRIPTION) ----
 
 devtools::install_deps(upgrade = "never")
@@ -17,15 +16,15 @@ devtools::install_deps(upgrade = "never")
 
 ## Load Project Addins (R Functions and Packages) ----
 
-devtools::load_all(here::here()) #switch off if using targets
+devtools::load_all(here::here()) #unnecesseray if using the targets package
 
 
 ## Targets configuration
 
-# targets::tar_config_set(
-#   store = "outputs/targets_outputs",
-#   script = "analyses/targets_pipeline.R"
-# )
+targets::tar_config_set(
+   store = "outputs/targets_outputs",
+   script = "analyses/targets_pipeline.R"
+)
 
 
 ## Global Variables ----
@@ -35,11 +34,7 @@ set.seed(123)
 
 ## Run Project ----
 
-# List all R scripts in a sequential order and using the following form:
+# Target pipeline :
 
-# source(here::here("analyses", "script_X.R"))
-
-# OR Target pipeline :
-
-# targets::tar_visnetwork()
-# targets::tar_make()
+targets::tar_make()
+targets::tar_visnetwork()
