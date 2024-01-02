@@ -53,11 +53,26 @@ dbDisconnect(conn)
 
 ################################################################################
 
-View(DATA %>%
-  filter(!is.na(taxon_capture) & is.na(taxon_dissection)))
+#BPM data quality control :
 
 View(DATA %>%
-  filter(is.na(taxon_capture) & !is.na(taxon_dissection)))
+  filter(!is.na(taxon_capture) & is.na(taxon_dissection) ) 
+  )
+
+View(DATA %>%
+  filter(is.na(taxon_capture) & !is.na(taxon_dissection) ) 
+  )
+
+View(DATA %>%
+       filter(code_resultat == 1) %>%
+       filter(is.na(taxon_capture) & is.na(taxon_dissection) ) 
+     )
+
+View(bpm_beprep |>
+       dplyr::filter( code_resultat %in% c("1") ) |>
+       dplyr::filter( morphologie == "0") 
+     )
+
 
 # Read file
 
@@ -129,16 +144,11 @@ bpm_beprep <- bpm_beprep |>
                                           "missing")))
 
 
+# Table making test
 
-
-
-
-
-
-# Table making --------- /!\ currently for ONE SEASON ONLY - NOT ONLY 3 FIRST TRAPPING DAYS
-
-## Success rate for ALL  
+## Trapping success for ALL TAXA - ONE MISSION ONLY - 3 DAYS
 bpm_beprep |>
+  dplyr::filter(date_releve - date_pose <= 3) |>
   dplyr::filter(code_mission == "FRA - BePrep - Octobre 2023" & code_resultat %in% c("0", "1")) |>
   dplyr::filter(morphologie == 1 | `NA` == 1 ) |>
   dplyr::group_by(numero_ligne) |>
@@ -149,61 +159,8 @@ bpm_beprep |>
     apodemus = sum(taxon_dissection %in% c("Apodemus")),
     vole = sum(taxon_dissection %in% c("Myodes glareolus")),
     insectivore = sum(taxon_dissection %in% c("Insectivore"))
-  ) |>
-  dplyr::mutate(succes_rate = round( 100*(apodemus+insectivore+vole)/ trap_nights, digits = 1 ) )
-
-
-## Success rate for Apodemus ONLY, ONE SEASOn
-t_apo <- bpm_beprep |>
-  dplyr::filter(code_mission == "FRA - BePrep - Octobre 2023" & code_resultat %in% c("0", "1")) |>
-  dplyr::filter(morphologie == 1 | `NA` == 1 ) |>
-  dplyr::group_by(numero_ligne) |>
-  dplyr::summarise(
-    treatment = unique(line_treatment),
-    line_type = unique(line_type),
-    trap_nights = dplyr::n(),
-    apodemus = sum(taxon_dissection %in% c("Apodemus")),
-    vole = sum(taxon_dissection %in% c("Myodes glareolus")),
-    insectivore = sum(taxon_dissection %in% c("Insectivore"))
-  ) |>
-  dplyr::mutate(succes_rate = round( 100*(apodemus) / trap_nights, digits = 1 ) )
-
-
-# Graph making
-library("ggplot2")
-
-t_apo |>
-  ggplot( aes(x = treatment, y =  succes_rate, color = line_type) ) +
-  geom_boxplot() +
-  geom_jitter(shape=16, position=position_jitter(0.1))
-
-t_apo |>
-  ggplot( aes(x = line_type, y =  succes_rate, color = treatment) ) +
-  geom_boxplot() +
-  geom_jitter(shape=16, position=position_jitter(0.1))
-
-
-
-
-
-
-### /!\ pour calcul sur taux de piegeage, bien faire que sur les 3 premiers jours
-
-## Trapping success for Apodemus ONLY - ONE MISSION ONLY - 3 DAYS
-bpm_beprep |>
-  dplyr::filter( date_releve - date_pose <= 3) |>
-  dplyr::filter(code_mission == "FRA - BePrep - Octobre 2023" & code_resultat %in% c("0", "1")) |>
-  dplyr::filter(morphologie == 1 | `NA` == 1 ) |>
-  dplyr::group_by(numero_ligne) |>
-  dplyr::summarise(
-    treatment = unique(line_treatment),
-    line_type = unique(line_type),
-    trap_nights = dplyr::n(),
-    apodemus = sum(taxon_dissection %in% c("Apodemus")),
     ) |>
-  dplyr::mutate(succes_rate = round( 100*(apodemus) / trap_nights, digits = 1 ) ) 
-
-
+  dplyr::mutate(succes_rate = round( 100*(apodemus + vole + insectivore) / trap_nights, digits = 1 ) ) 
 
 
 # Statistical analyses
@@ -215,6 +172,7 @@ m_trapping_r <- bpm_beprep |>
   dplyr::filter( date_releve - date_pose <= 3) |>
   dplyr::filter( code_resultat %in% c("0", "1") ) |>
   dplyr::filter( morphologie == 1 | `NA` == 1 ) |>
+  dplyr::filter( taxon_dissection %in% c("Apodemus", NA) ) |>
   lme4::glmer( formula = code_resultat ~ line_treatment + (1|code_mission) + (1|numero_ligne) + (1|numero_releve),
               family = binomial( link = "logit" ),
               na.action = "na.fail",
@@ -232,42 +190,27 @@ performance ::r2(m_trapping_r) # R2
 drop1(m_trapping_r,.~.,test="Chisq") 
 
 
+## Line trapping rate modelling for Apodemus only
 
+# model all season combine : one data per replicat
 
-
-
-## Line trapping rate modelling
-
-#model all season combine : one data per replicat
 bpm_beprep |>
-  dplyr::filter( code_resultat %in% c("0", "1")) |>
+  dplyr::filter( date_releve - date_pose <= 3) |>
+  dplyr::filter( code_resultat %in% c("0", "1") ) |>
   dplyr::filter( morphologie == 1 | `NA` == 1 ) |>
-  dplyr::group_by( numero_ligne, code_mission ) |>
+  dplyr::filter( taxon_dissection %in% c("Apodemus", NA) ) |>
+  dplyr::group_by(numero_ligne) |>
   dplyr::summarise(
     treatment = unique(line_treatment),
-    type = unique(line_type),
     trap_nights = dplyr::n(),
-    apodemus = sum(taxon_dissection %in% c("Apodemus")),
-    vole = sum(taxon_dissection %in% c("Myodes glareolus")),
-    insectivore = sum(taxon_dissection %in% c("Insectivore"))
-  ) |>
-  dplyr::mutate(succes_rate = round( 100*(apodemus) / trap_nights, digits = 1 ) ) |>
-  stats::glm( formula =  succes_rate ~ treatment ,
-               family = poisson(link = "log"),
-               na.action = "na.fail",
-              )  |>
-  summary()
+    apodemus = sum(taxon_dissection %in% c("Apodemus") ) ) |>
+  dplyr::mutate(succes_rate = round( 100*(apodemus) / trap_nights, digits = 1 ) )
+
   
   
 # Faire sur toutes saisons
 # soit faire taux piegeage (par ligne) en fonction traitement avec replicat en facteur aleat (ex : 6 replicat par modalite puisque 6 ligne)
 # soit faire Capture oui/non par nuit.piege avec nuit releve et ou piege comme facteur aleat (voir replicats ? pertinence)
 # faire carte sur R tester
-
-# controle bpm 
-View(bpm_beprep |>
-  dplyr::filter( code_resultat %in% c("1") ) |>
-  dplyr::filter( morphologie == "0")
-)
 
 

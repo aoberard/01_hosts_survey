@@ -1,29 +1,31 @@
-#' Download CBGP Small Mammals Database's raw data
+#' PURPOSE
 #'
 #' @description 
-#' This function downloads raw data (csv files) hosted on the "BPM", the :
-#' CBGP Small Mammals Database <http://vminfotron-dev.mpl.ird.fr/bdrss/index.php/>.
-#' The files won't be downloaded if already exist locally (except if `overwrite = TRUE`).
+#' This function 
 #' 
-#' @param overwrite a logical. If `TRUE`, the files will be downloaded again 
-#'   and the previous versions will be erased.
+#' unique combination of the specified columns as rows and the different 
+#' values of methode_identification as columns. The counts of occurrences are provided in each cell.
+#' For example, the last few columns (NA, morphologie) represent the counts of occurrences for each 
+#' combination of the other columns under the corresponding methode_identification value.
+#' 
+#' @param 
 #'
-#' @return Filepath of the newly downloaded file
+#' @return 
 #' 
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' ## Download data ----
-#' bpm_extraction()
+#' dcast(bpm)
 
 
-
+identif_method_cast <- function (data) {
   
+  ## Casting by 
   
-  ## Destination location ---- 
-
+  dcast(data, 
+        code_mission + localite + date_pose + numero_ligne + date_releve + numero_releve + numero_piege + latitude_piege + longitude_piege + code_resultat + abbrev_resultat + resultat + numero_terrain + commentaire + taxon_capture + numero_centre + date_dissection + sexe + observations + taxon_dissection ~ methode_identification,
+        value.var = "taxon_dissection",
+        fun = length )
   
-  
-  
-  
+}

@@ -19,6 +19,7 @@ RoxygenNote: 7.2.3
 Imports: 
     data.table,
     devtools,
+    DHARMa,
     dplyr,
     ggplot2,
     here,
@@ -26,5 +27,7 @@ Imports:
     performance,
     readr,
     RPostgreSQL,
+    RVAideMemoire,
+    stats,
     tarchetypes,
     targets

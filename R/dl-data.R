@@ -8,7 +8,7 @@
 #' @param overwrite a logical. If `TRUE`, the files will be downloaded again 
 #'   and the previous versions will be erased.
 #'
-#' @return Filepath of the newly downloaded file
+#' @return path of the newly downloaded file
 #' 
 #' @export
 #'
@@ -69,7 +69,8 @@ bpm_extraction <- function(overwrite = FALSE) {
       dis.numero_centre, dis.date_dissection_2 AS date_dissection, dis.sexe, dis.observations,
       iden.methode_identification,
       txi.taxon_name AS taxon_dissection
-      FROM t_missions AS mi
+      FROM 
+      t_missions AS mi
       LEFT JOIN t_lignes AS li ON li.id_mission = mi.id
       LEFT JOIN t_localites AS lo ON li.id_localite = lo.id
       LEFT JOIN t_releves AS re ON re.id_ligne = li.id
