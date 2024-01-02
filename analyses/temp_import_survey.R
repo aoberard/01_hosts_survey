@@ -53,27 +53,6 @@ dbDisconnect(conn)
 
 ################################################################################
 
-#BPM data quality control :
-
-View(DATA %>%
-  filter(!is.na(taxon_capture) & is.na(taxon_dissection) ) 
-  )
-
-View(DATA %>%
-  filter(is.na(taxon_capture) & !is.na(taxon_dissection) ) 
-  )
-
-View(DATA %>%
-       filter(code_resultat == 1) %>%
-       filter(is.na(taxon_capture) & is.na(taxon_dissection) ) 
-     )
-
-View(bpm_beprep |>
-       dplyr::filter( code_resultat %in% c("1") ) |>
-       dplyr::filter( morphologie == "0") 
-     )
-
-
 # Read file
 
 bpm_beprep <- readr::read_csv( here::here("data/", "raw-data/", "export_alois20231214.csv") )
@@ -144,6 +123,31 @@ bpm_beprep <- bpm_beprep |>
                                           "missing")))
 
 
+#BPM data quality control :
+
+DATA %>%
+  filter(!is.na(taxon_capture) & is.na(taxon_dissection) ) # obs avec identif capture, pas dissection
+
+DATA %>%
+  filter(is.na(taxon_capture) & !is.na(taxon_dissection) ) # obs avec identif dissection, pas capture
+
+DATA %>%
+  filter(code_resultat == 1) %>%
+  filter(is.na(taxon_capture) & is.na(taxon_dissection) ) #obs capture sans identif capture ou dissect 
+
+DATA |>
+  dplyr::filter( code_resultat %in% c("1") ) |>
+  dplyr::filter( morphologie == "0")  # obs capturé, pas d'identif morpho
+
+DATA |>
+  filter(`NA` == 1 & morphologie == 1) # obs avec identif en double
+
+bpm_beprep |>
+  filter(code_resultat == 1) |>
+  filter(taxon_dissection == "Apodemus") |>
+  filter(is.na(sexe))                      # Mulot disséqué, sans sexe attribué
+
+
 # Table making test
 
 ## Trapping success for ALL TAXA - ONE MISSION ONLY - 3 DAYS
@@ -162,6 +166,8 @@ bpm_beprep |>
     ) |>
   dplyr::mutate(succes_rate = round( 100*(apodemus + vole + insectivore) / trap_nights, digits = 1 ) ) 
 
+bpm_beprep |>
+  filter(is.na(code_resultat))
 
 # Statistical analyses
 
@@ -194,7 +200,8 @@ drop1(m_trapping_r,.~.,test="Chisq")
 
 # model all season combine : one data per replicat
 
-bpm_beprep |>
+### no random
+m_ltrapping <- bpm_beprep |>
   dplyr::filter( date_releve - date_pose <= 3) |>
   dplyr::filter( code_resultat %in% c("0", "1") ) |>
   dplyr::filter( morphologie == 1 | `NA` == 1 ) |>
@@ -204,13 +211,78 @@ bpm_beprep |>
     treatment = unique(line_treatment),
     trap_nights = dplyr::n(),
     apodemus = sum(taxon_dissection %in% c("Apodemus") ) ) |>
-  dplyr::mutate(succes_rate = round( 100*(apodemus) / trap_nights, digits = 1 ) )
+  dplyr::mutate(succes_rate = apodemus / trap_nights ) |> 
+  glm(
+    formula = cbind(apodemus, trap_nights - apodemus) ~ treatment,
+    family =  binomial(link = "logit")
+  )
 
+DHARMa::simulateResiduals(m_ltrapping) |> #alignement testing
+  DHARMa::testResiduals() 
+
+drop1(m_ltrapping, .~.,test="Chisq") 
+
+### random
+m_ltrapping_r <- bpm_beprep |>
+  dplyr::filter( date_releve - date_pose <= 3) |>
+  dplyr::filter( code_resultat %in% c("0", "1") ) |>
+  dplyr::filter( morphologie == 1 | `NA` == 1 ) |>
+  dplyr::filter( taxon_dissection %in% c("Apodemus", NA) ) |>
+  dplyr::group_by(numero_ligne) |>
+  dplyr::summarise(
+    treatment = unique(line_treatment),
+    trap_nights = dplyr::n(),
+    apodemus = sum(taxon_dissection %in% c("Apodemus") ) ) |>
+  dplyr::mutate(succes_rate = apodemus / trap_nights ) |> 
+  lme4::glmer( formula = cbind(apodemus, trap_nights - apodemus) ~ treatment + (1|numero_ligne),
+               family = binomial( link = "logit" ),
+               na.action = "na.fail",
+               control = lme4::glmerControl( optimizer="bobyqa", optCtrl=list(maxfun=2e5) ) ) 
+
+DHARMa::simulateResiduals(m_ltrapping_r) |> #alignement testing
+  DHARMa::testResiduals() 
   
+drop1(m_ltrapping_r, .~.,test="Chisq") 
   
+
+# Sex bias
+bpm_beprep |>
+  dplyr::filter( date_releve - date_pose <= 3) |>
+  dplyr::filter( code_resultat %in% c("1") ) |>
+  dplyr::filter( morphologie == 1 | `NA` == 1 ) |>
+  dplyr::filter( taxon_dissection %in% c("Apodemus", NA) ) |>
+  dplyr::group_by(sexe) |>
+  dplyr::count()
+
+chisq.test(table(bpm_beprep$sexe, bpm_beprep$line_treatment)) #sex difference by treatment?
+
+
 # Faire sur toutes saisons
 # soit faire taux piegeage (par ligne) en fonction traitement avec replicat en facteur aleat (ex : 6 replicat par modalite puisque 6 ligne)
 # soit faire Capture oui/non par nuit.piege avec nuit releve et ou piege comme facteur aleat (voir replicats ? pertinence)
 # faire carte sur R tester
+
+
+# Graph making try for apodemus ONLY capture rate per treatment ALL SEASONS COMBINED
+
+library(ggplot2)
+
+graph_sequence <- c("CT_LB", "CT_HB", "NC_LB", "NC_HB", "C_LB", "C_HB" )
+
+bpm_beprep |>
+  dplyr::filter( date_releve - date_pose <= 3) |>
+  dplyr::filter( code_resultat %in% c("0", "1") ) |>
+  dplyr::filter( morphologie == 1 | `NA` == 1 ) |>
+  dplyr::filter( taxon_dissection %in% c("Apodemus", NA) ) |>
+  dplyr::group_by(numero_ligne, code_mission) |>
+  dplyr::summarise(
+    treatment = unique(line_treatment),
+    trap_nights = dplyr::n(),
+    apodemus = sum(taxon_dissection %in% c("Apodemus") ) ) |>
+  dplyr::mutate( succes_rate = apodemus / trap_nights ) |>
+  ggplot(aes(x =  factor(treatment, levels = graph_sequence), y = succes_rate, fill = code_mission ) ) +
+  geom_boxplot(position = position_dodge(1)) +
+  geom_dotplot(binaxis = 'y', stackdir='center', position = position_dodge(1), dotsize = 0.8  )
+
 
 
