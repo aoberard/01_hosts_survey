@@ -24,19 +24,21 @@ targets::tar_source(here::here("R"))
 
 list(
   
-  ## 1 - Download raw data  ----------------------------------------------------
+  # 1 Data management ----------------------------------------------------------
+  
+  ### 1.1 - Download raw data ----
   tar_target(tar_dl_raw_bpm, bpm_extraction(overwrite = TRUE))
   
   
-  ## 2 - Raw files path --------------------------------------------------------
+  ### 1.2 - Raw files path ----
   ,tar_target(tar_raw_bpm_file, tar_dl_raw_bpm, format = "file" )
   
   
-  ## 3 - Read data -------------------------------------------------------------
+  ### 1.3 - Read data ----
   ,tar_target(tar_read_raw_bpm, read_bpm_query(tar_raw_bpm_file))
   
   
-  ## 4 - Cast --------------------------------------------------------
-
+  ### 1.4 - Identification method grouping ----
+  
   
 )

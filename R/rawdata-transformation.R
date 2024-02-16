@@ -1,16 +1,15 @@
 #' PURPOSE
 #'
 #' @description 
-#' This function 
-#' 
-#' unique combination of the specified columns as rows and the different 
-#' values of methode_identification as columns. The counts of occurrences are provided in each cell.
+#' For each combination of the specified columns
+#' This function create an unique combination of the specified columns as rows and generate a row 
+#' values of identification methodes (methode_identification) as columns.
 #' For example, the last few columns (NA, morphologie) represent the counts of occurrences for each 
 #' combination of the other columns under the corresponding methode_identification value.
 #' 
-#' @param 
+#' @param data a tibble originating from the BPM Database extraction
 #'
-#' @return 
+#' @return a `tibble` containing the unique combinations of the specified columns and the number of time they appear for each 
 #' 
 #' @export
 #'

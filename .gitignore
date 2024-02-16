@@ -22,6 +22,9 @@ inst/doc
 man/
 NAMESPACE
 
-# Outputs
+# Large data ----
+data/
+
+# Outputs ----
 outputs/
 figures/

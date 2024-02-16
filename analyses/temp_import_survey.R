@@ -2,6 +2,7 @@
 
 library("RPostgreSQL")
 library("data.table")
+library("dplyr")
 
 # database and user parameters
 host <- "cbgp-gaia2" ; port <- 5432 ; db   <- "rongeurs" ; user <- "mus" ; pwd  <- "musculus" # read-only account (safe !)
@@ -122,6 +123,17 @@ bpm_beprep <- bpm_beprep |>
                                    ifelse(grepl("CT_", line_treatment), "pine",
                                           "missing")))
 
+## Modality decomposed
+
+bpm_beprep$connectivity <- NA
+C <- c(2, 6, 20, 24, 30, 7, 11, 12, 28, 33, 36, 17)
+CT <- c(8, 14, 18, 23, 26, 34, 5, 10, 15, 22, 32, 35)
+NC <- c(3, 4, 13, 25, 27, 29, 1, 9, 16, 19, 21, 31)
+
+bpm_beprep$broadleaved_status <- NA
+LB <- c(7, 11, 12, 28, 33, 36, 5, 10, 15, 22, 32, 35, 1, 9, 16, 19, 21, 31)
+HB <- c(17, 2, 6, 20, 24, 30, 8, 14, 18, 23, 26, 34, 3, 4, 13, 25, 27, 29)
+
 
 #BPM data quality control :
 
@@ -166,20 +178,18 @@ bpm_beprep |>
     ) |>
   dplyr::mutate(succes_rate = round( 100*(apodemus + vole + insectivore) / trap_nights, digits = 1 ) ) 
 
-bpm_beprep |>
-  filter(is.na(code_resultat))
 
 # Statistical analyses
 
 ## Apodemus trapping probability models
 
-### random effect (logit) (ligne = replicat, numero releve : nuit piegeage)
+### random effect (logit) (ligne = replicat, numero releve : nuit piegeage, année-saison:code_mission)
 m_trapping_r <- bpm_beprep |>
   dplyr::filter( date_releve - date_pose <= 3) |>
   dplyr::filter( code_resultat %in% c("0", "1") ) |>
   dplyr::filter( morphologie == 1 | `NA` == 1 ) |>
   dplyr::filter( taxon_dissection %in% c("Apodemus", NA) ) |>
-  lme4::glmer( formula = code_resultat ~ line_treatment + (1|code_mission) + (1|numero_ligne) + (1|numero_releve),
+  lme4::glmer( formula = code_resultat ~ line_treatment + (1|numero_ligne),
               family = binomial( link = "logit" ),
               na.action = "na.fail",
               control = lme4::glmerControl( optimizer="bobyqa", optCtrl=list(maxfun=2e5) ) ) 
@@ -282,7 +292,6 @@ bpm_beprep |>
   dplyr::mutate( succes_rate = apodemus / trap_nights ) |>
   ggplot(aes(x =  factor(treatment, levels = graph_sequence), y = succes_rate, fill = code_mission ) ) +
   geom_boxplot(position = position_dodge(1)) +
-  geom_dotplot(binaxis = 'y', stackdir='center', position = position_dodge(1), dotsize = 0.8  )
-
-
+  geom_dotplot(binaxis = 'y', stackdir='center', position = position_dodge(1), dotsize = 0.5  )+
+  theme_minimal()
 
