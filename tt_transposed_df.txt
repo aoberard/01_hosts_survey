@@ -1,0 +1,13 @@
+rownames(tt_transposed_df),Dermacentor.marginatus,Dermacentor.reticulatus,Ixodes.ricinus,Ixodes.ricinus.1,NA.
+stage,larvae,larvae,larvae,nymph,larvae
+Borrelia.afzelii_fla,0.040,0.077,0.125,0.200,0.000
+Borrelia.lusitaniae_rpoB,0.0,0.0,0.0,0.2,0.0
+Borrelia.spp._23S,0.040,0.077,0.125,0.400,0.000
+Ehrlichia.spp..16S,0.000,0.154,0.031,0.200,0.000
+Candidatus.Neoehrlichia.mikurensis_groEL,0.000,0.154,0.062,0.200,0.000
+Rickettsia.helvetica_ITS,0.000,0.000,0.031,0.000,0.000
+Rickettsia.spp._gltA,0.040,0.769,0.125,0.000,0.000
+Bartonella.spp._ssrA,0.040,0.000,0.219,0.400,0.000
+Francisella.tularensis_fopA.,0,1,0,0,0
+Apicomplexa_18S,0.000,0.000,0.094,0.000,0.000
+Babesia.venatorum_18S,0.000,0.000,0.094,0.000,0.000
